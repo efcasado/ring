@@ -65,7 +65,7 @@
 %% string or a binary.
 %% @end
 %%-------------------------------------------------------------------------
-run(P, Size, Type, N) when P > 1, N > 0 ->
+run(P, Size, Type, N) when P > 0, N > 0 ->
     Peer1 = spawn(fun() -> loop0() end),
     PeerP = lists:foldl(fun(_, Peer) -> spawn(fun() -> loop(Peer) end) end,
                         Peer1,
