@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+###
+### File: plot
+###
+### Bash script used to plot the results from the ring benchmark.
+###
+### USAGE:
+###   plot -avg.dat$
+###
+### Author: Enrique Fernandez <efcasado@gmail.com>
+###
+### Copyright (c) 2015 Enrique Fernandez
+###========================================================================
+
+
+## Functions
+##========================================================================
+
+function check_dependency() {
+    local prog=$1
+    if ! $(which -s $prog); then
+        >&2 echo "ERROR: Required dependency $prog not found"
+        exit 1
+    fi
+}
+
+function check_args() {
+    if [ ! "$#" -eq 3 ]; then
+        >&2 echo "USAGE: $(basename $0) <output>"
+        exit 1
+    fi
+}
+
+function plot() {
+    local title=$1
+    local output=$2
+
+    local msg_size=$(echo $3 | sed "s/results\/\([[:digit:]]*\)-.*/\1/g")
+    local msg_type=$(echo $3 | sed "s/results\/[[:digit:]]*-\(.*\)_.*/\1/g")
+    local expr="plot '$3' using 1:2 with lines title '$msg_size bytes ($msg_type)'"
+    shift 3
+
+    for f in $@; do
+        msg_size=$(echo $f | sed "s/results\/\([[:digit:]]*\)-.*/\1/g")
+        msg_type=$(echo $f | sed "s/results\/[[:digit:]]*-\(.*\)_.*/\1/g")
+        expr+=", '$f' using 1:2 with lines title '$msg_size bytes ($msg_type)'"
+    done
+
+    gnuplot                                   \
+        -e "set term png size 800,460"        \
+        -e "set output '$output'"             \
+        -e "set title '$title'"               \
+        -e "set xlabel 'Number of Processes'" \
+        -e "set ylabel 'Time (microseconds)'" \
+        -e "set key out"                      \
+        -e "set logscale x"                   \
+        -e "$expr"
+}
+
+
+## Main
+##=========================================================================
+
+function main() {
+    check_dependency gnuplot
+    check_args "$@"
+
+    local title=$1
+    local output=$2
+    local regexp=$3
+
+    local files=$(find results -name $regexp)
+    plot "$title" $output $files
+}
+
+main "$@"
